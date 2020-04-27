@@ -26,7 +26,7 @@
              http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd
              ">
 
-	<camelcxf:rsServer id="rsServer" address="http://0.0.0.0:8080/route" serviceClass="com.example.CustomerService" loggingFeatureEnabled="true">
+	<camelcxf:rsServer id="rsServer" address="http://CXF_SERVICE_IP:PORT/context" serviceClass="com.example.CustomerService" loggingFeatureEnabled="true">
 		<camelcxf:providers>
 			<bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
 		</camelcxf:providers>
@@ -78,7 +78,7 @@
 			</setHeader>
 			<!-- Set more headers if needed; here -->
 
-			<to uri="http4://169.254.200.228:8080/users?bridgeEndpoint=true"/>
+			<to uri="http4://JERSEY_SERVICE_IP:PORT/context?bridgeEndpoint=true"/>
 			<!-- Here you'll receive the output of the aforementioned web service if you want to process the output,
 				You can write another processor.
 			-->
