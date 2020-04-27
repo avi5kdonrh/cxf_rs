@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+		   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+		   xmlns:cxf="http://cxf.apache.org/blueprint/core"
+		   xsi:schemaLocation="
+      http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+      http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd
+      http://cxf.apache.org/blueprint/core http://cxf.apache.org/schemas/blueprint/core.xsd">
+-->
+
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+		   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		   xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0"
+		   xmlns:jaxws="http://cxf.apache.org/blueprint/jaxws"
+		   xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+		   xmlns:cxf="http://cxf.apache.org/blueprint/core"
+		   xmlns:camel="http://camel.apache.org/schema/blueprint"
+		   xmlns:camelcxf="http://camel.apache.org/schema/blueprint/cxf"
+		   xsi:schemaLocation="
+             http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+             http://cxf.apache.org/blueprint/jaxws http://cxf.apache.org/schemas/blueprint/jaxws.xsd
+             http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd
+             http://cxf.apache.org/blueprint/core http://cxf.apache.org/schemas/blueprint/core.xsd
+             http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint.xsd
+             ">
+
+	<camelcxf:rsServer id="rsServer" address="http://0.0.0.0:8080/route" serviceClass="com.example.CustomerService" loggingFeatureEnabled="true">
+		<camelcxf:providers>
+			<bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+		</camelcxf:providers>
+	</camelcxf:rsServer>
+
+	<cxf:bus>
+		<cxf:features>
+			<cxf:logging />
+		</cxf:features>
+		<cxf:properties>
+			<!--
+              This property needs to be set 'true' in order to give preference to JacksonJsonProvider
+              over the default Jettison provider.
+            -->
+			<entry key="skip.default.json.provider.registration" value="true" />
+		</cxf:properties>
+	</cxf:bus>
+
+
+	<!--
+      We are using the OSGi Blueprint XML syntax to define a bean that we referred to in our JAX-RS server setup.
+      This bean carries a set of JAX-RS annotations that allow its methods to be mapped to incoming requests.
+    -->
+	<bean id="customerSvc" class="com.example.CustomerService"/>
+
+<!--<bean id="jaxb" class="org.apache.camel.model.dataformat.JaxbDataFormat">
+	<property name="context"
+</bean>
+	<bean id="jaxb_context" class="javax.xml.bind.JAXBContext" init-method="newInstance"/bean>-->
+
+	<camelContext xmlns="http://camel.apache.org/schema/blueprint">
+
+		<route>
+
+			<from uri="cxfrs://bean://rsServer" />
+			<process ref="input_proc"/>
+			<marshal>
+				<jaxb contextPath="com.example" />
+			</marshal>
+			<log message=">>>>>>>>>>> ${body}"/>
+			<setHeader headerName="CamelHttpPath">
+				<constant>/</constant>
+			</setHeader>
+			<setHeader headerName="Content-Type">
+				<constant>application/xml</constant>
+			</setHeader>
+			<setHeader headerName="CamelHttpMethod">
+				<constant>POST</constant>
+			</setHeader>
+			<!-- Set more headers if needed; here -->
+
+			<to uri="http4://169.254.200.228:8080/users?bridgeEndpoint=true"/>
+			<!-- Here you'll receive the output of the aforementioned web service if you want to process the output,
+				You can write another processor.
+			-->
+			<to uri="log:after?showAll=true"/>
+		</route>
+	</camelContext>
+
+	<bean id="input_proc" class="com.example.ProcessforInput"/>
+</blueprint>
